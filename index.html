@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pairwise Text Evaluation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 2em auto; line-height: 1.6; }
+    .text-block { border: 1px solid #ccc; padding: 1em; margin: 1em 0; }
+    .buttons { display: flex; justify-content: space-around; margin-top: 1em; }
+    button { padding: 0.75em 1.5em; font-size: 1em; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h1>Which text do you prefer?</h1>
+  <p>Please read the two passages below and click on the one you prefer.</p>
+
+  <div id="pair-container">
+    <div id="textA" class="text-block"></div>
+    <div id="textB" class="text-block"></div>
+  </div>
+
+  <div class="buttons">
+    <button id="chooseA">I prefer Text A</button>
+    <button id="chooseB">I prefer Text B</button>
+  </div>
+
+  <script>
+    // === Configuration ===
+    const ENDPOINT_URL = 'https://YOUR_ENDPOINT_HERE';  // TODO: set to your data-collection endpoint
+    const NUM_TRIALS = 20;                            // TODO: set how many pairwise trials you need
+
+    // === Your stimuli ===
+    // For long, multi-line markdown texts, use JavaScript template literals (backticks)
+    // or load them from external JSON/MD files via fetch.
+    const stimuli = [
+      {
+        id: 1,
+        source: 'A',
+        markdown: `# Title of Passage A1
+
+This is a long markdown text from source A. It can span multiple lines,
+include **bold** and *italic* formatting, lists:
+
+- Item one
+- Item two
+
+And more paragraphs as needed.
+`
+      },
+      {
+        id: 2,
+        source: 'B',
+        markdown: `# Title of Passage B1
+
+Here is another long markdown passage from source B. You can write as
+much as a page worth of content here.
+
+1. First ordered item
+2. Second ordered item
+
+End of passage.
+`
+      },
+      // … add more items similarly …
+    ];
+
+    // Alternatively, to keep index.html lean, store stimuli in a separate JSON file:
+    // fetch('stimuli.json')
+    //   .then(res => res.json())
+    //   .then(data => { stimuli = data; nextTrial(); })
+    //   .catch(console.error);
+
+    // === Utilities ===
+    function getQueryParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    // Pick two random items from different sources
+    function samplePair() {
+      const bySource = {};
+      stimuli.forEach(item => {
+        bySource[item.source] = bySource[item.source] || [];
+        bySource[item.source].push(item);
+      });
+      const sources = Object.keys(bySource);
+      if (sources.length < 2) {
+        console.error('Need at least two distinct sources.');
+        return null;
+      }
+      const [s1, s2] = shuffle(sources).slice(0,2);
+      const item1 = bySource[s1][Math.floor(Math.random() * bySource[s1].length)];
+      const item2 = bySource[s2][Math.floor(Math.random() * bySource[s2].length)];
+      return [item1, item2];
+    }
+
+    // Minimal Markdown-to-HTML converter
+    function renderMarkdown(md) {
+      return md
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+    }
+
+    // === Main experiment logic ===
+    let trial = 0;
+    const participant = getQueryParam('participant') || 'unknown';
+    let currentPair = null;
+
+    function nextTrial() {
+      if (trial >= NUM_TRIALS) {
+        document.body.innerHTML = '<h2>Thank you for your participation!</h2>' +
+          '<p>You may now close this window.</p>';
+        return;
+      }
+      trial++;
+      const [A, B] = samplePair();
+      currentPair = { A, B };
+      document.getElementById('textA').innerHTML = renderMarkdown(A.markdown);
+      document.getElementById('textB').innerHTML = renderMarkdown(B.markdown);
+    }
+
+    async function submitChoice(chosen) {
+      const payload = {
+        participant,
+        trial,
+        chosen_id: chosen.id,
+        chosen_source: chosen.source,
+        other_id: (chosen === currentPair.A ? currentPair.B.id : currentPair.A.id),
+        other_source: (chosen === currentPair.A ? currentPair.B.source : currentPair.A.source),
+        timestamp: new Date().toISOString()
+      };
+      try {
+        await fetch(ENDPOINT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        console.error('Failed to submit:', err);
+      } finally {
+        nextTrial();
+      }
+    }
+
+    document.getElementById('chooseA').addEventListener('click', () => submitChoice(currentPair.A));
+    document.getElementById('chooseB').addEventListener('click', () => submitChoice(currentPair.B));
+
+    // Kick off the first trial
+    nextTrial();
+  </script>
+
+</body>
+</html>
