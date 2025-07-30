@@ -2,28 +2,90 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Pairwise Text Evaluation</title>
+  <title>ARGOS-PWC</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
-    body { font-family: sans-serif; max-width: 800px; margin: 2em auto; line-height: 1.6; }
-    .text-block { border: 1px solid #ccc; padding: 1em; margin: 1em 0; }
-    .buttons { display: flex; justify-content: space-around; margin-top: 1em; }
-    button { padding: 0.75em 1.5em; font-size: 1em; cursor: pointer; }
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #000000;
+      --card-bg: #f9f9f9;
+      --button-bg: #dddddd;
+      --button-text: #000000;
+    }
+
+    body.dark {
+      --bg-color: #121212;
+      --text-color: #ffffff;
+      --card-bg: #1e1e1e;
+      --button-bg: #333333;
+      --button-text: #ffffff;
+    }
+
+    body {
+      font-family: sans-serif;
+      max-width: 900px;
+      margin: 2em auto;
+      line-height: 1.6;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .text-pair {
+      display: flex;
+      flex-direction: row;
+      gap: 1em;
+      margin-bottom: 1em;
+    }
+
+    .text-block {
+      flex: 1;
+      border: 1px solid #ccc;
+      padding: 1em;
+      border-radius: 10px;
+      background-color: var(--card-bg);
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 1em;
+    }
+
+    button {
+      padding: 0.75em 1.5em;
+      font-size: 1em;
+      cursor: pointer;
+      border-radius: 10px;
+      border: none;
+      background-color: var(--button-bg);
+      color: var(--button-text);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    #theme-toggle {
+      position: fixed;
+      top: 1em;
+      right: 1em;
+    }
   </style>
 </head>
 <body>
 
+  <button id="theme-toggle">🌙</button>
+
   <h1>Which text do you prefer?</h1>
   <p>Please read the two passages below and click on the one you prefer.</p>
 
-  <div id="pair-container">
+  <div id="pair-container" class="text-pair">
     <div id="textA" class="text-block"></div>
     <div id="textB" class="text-block"></div>
   </div>
 
   <div class="buttons">
-    <button id="chooseA">I prefer Text A</button>
-    <button id="chooseB">I prefer Text B</button>
+    <button id="chooseA">I prefer this text</button>
+    <button id="chooseB">I prefer this text</button>
   </div>
 
   <script>
@@ -31,48 +93,12 @@
     const ENDPOINT_URL = 'https://YOUR_ENDPOINT_HERE';  // TODO: set to your data-collection endpoint
     const NUM_TRIALS = 20;                            // TODO: set how many pairwise trials you need
 
-    // === Your stimuli ===
-    // For long, multi-line markdown texts, use JavaScript template literals (backticks)
-    // or load them from external JSON/MD files via fetch.
     const stimuli = [
-      {
-        id: 1,
-        source: 'A',
-        markdown: `# Title of Passage A1
-
-This is a long markdown text from source A. It can span multiple lines,
-include **bold** and *italic* formatting, lists:
-
-- Item one
-- Item two
-
-And more paragraphs as needed.
-`
-      },
-      {
-        id: 2,
-        source: 'B',
-        markdown: `# Title of Passage B1
-
-Here is another long markdown passage from source B. You can write as
-much as a page worth of content here.
-
-1. First ordered item
-2. Second ordered item
-
-End of passage.
-`
-      },
-      // … add more items similarly …
+      { id: 1, source: 'A', markdown: 'First text from source **A**.' },
+      { id: 2, source: 'B', markdown: 'First text from source **B**.' },
+      { id: 3, source: 'C', markdown: 'First text from source **C**.' },
     ];
 
-    // Alternatively, to keep index.html lean, store stimuli in a separate JSON file:
-    // fetch('stimuli.json')
-    //   .then(res => res.json())
-    //   .then(data => { stimuli = data; nextTrial(); })
-    //   .catch(console.error);
-
-    // === Utilities ===
     function getQueryParam(name) {
       const params = new URLSearchParams(window.location.search);
       return params.get(name);
@@ -86,7 +112,6 @@ End of passage.
       return array;
     }
 
-    // Pick two random items from different sources
     function samplePair() {
       const bySource = {};
       stimuli.forEach(item => {
@@ -98,13 +123,12 @@ End of passage.
         console.error('Need at least two distinct sources.');
         return null;
       }
-      const [s1, s2] = shuffle(sources).slice(0,2);
+      const [s1, s2] = shuffle(sources).slice(0, 2);
       const item1 = bySource[s1][Math.floor(Math.random() * bySource[s1].length)];
       const item2 = bySource[s2][Math.floor(Math.random() * bySource[s2].length)];
       return [item1, item2];
     }
 
-    // Minimal Markdown-to-HTML converter
     function renderMarkdown(md) {
       return md
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -112,20 +136,19 @@ End of passage.
         .replace(/\n/g, '<br>');
     }
 
-    // === Main experiment logic ===
     let trial = 0;
     const participant = getQueryParam('participant') || 'unknown';
-    let currentPair = null;
 
     function nextTrial() {
       if (trial >= NUM_TRIALS) {
-        document.body.innerHTML = '<h2>Thank you for your participation!</h2>' +
-          '<p>You may now close this window.</p>';
+        document.body.innerHTML = '<h2>Thank you for your participation!</h2>'
+          + '<p>You may now close this window.</p>';
         return;
       }
       trial++;
       const [A, B] = samplePair();
       currentPair = { A, B };
+
       document.getElementById('textA').innerHTML = renderMarkdown(A.markdown);
       document.getElementById('textB').innerHTML = renderMarkdown(B.markdown);
     }
@@ -153,10 +176,39 @@ End of passage.
       }
     }
 
-    document.getElementById('chooseA').addEventListener('click', () => submitChoice(currentPair.A));
-    document.getElementById('chooseB').addEventListener('click', () => submitChoice(currentPair.B));
+    document.getElementById('chooseA').addEventListener('click', () => {
+      submitChoice(currentPair.A);
+    });
+    document.getElementById('chooseB').addEventListener('click', () => {
+      submitChoice(currentPair.B);
+    });
 
-    // Kick off the first trial
+    // Theme toggle
+      // Select the button only once after DOM is ready
+    const themeButton = document.getElementById('theme-toggle');
+
+    function updateThemeIcon() {
+      const isDark = document.body.classList.contains('dark');
+      themeButton.textContent = isDark ? '☀️' : '🌙'; // sun for dark, moon for light
+    }
+
+    themeButton.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      const isDark = document.body.classList.contains('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      updateThemeIcon(); // 🔁 must be called after toggling the class
+    });
+
+    // Apply saved theme on load
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark') {
+        document.body.classList.add('dark');
+      }
+      updateThemeIcon(); // Initial correct icon
+    });
+
+    let currentPair = null;
     nextTrial();
   </script>
 
