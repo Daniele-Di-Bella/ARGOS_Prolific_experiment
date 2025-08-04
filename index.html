@@ -90,14 +90,16 @@
 
   <script>
     // === Configuration ===
-    const ENDPOINT_URL = 'https://YOUR_ENDPOINT_HERE';  // TODO: set to your data-collection endpoint
-    const NUM_TRIALS = 20;                            // TODO: set how many pairwise trials you need
+    const ENDPOINT_URL = 'https://script.google.com/macros/s/AKfycbx3kGyidEOrQOeKJ9rCNuRnI4paNOy7DrhPJj3fXDzuhtsrSHu9tHcLdctXWUd7Vvk/exec';  // TODO: set to your data-collection endpoint
+    const NUM_TRIALS = 2;  // How many pairwise trials each participant will evaluate
 
-    const stimuli = [
-      { id: 1, source: 'A', markdown: 'First text from source **A**.' },
-      { id: 2, source: 'B', markdown: 'First text from source **B**.' },
-      { id: 3, source: 'C', markdown: 'First text from source **C**.' },
-    ];
+    let stimuli = [];
+    fetch('experiment1/stimuli.json')
+      .then(response => response.json())
+      .then(data => {
+        stimuli = data;
+        nextTrial();  // start the experiment once data is loaded
+      });
 
     function getQueryParam(name) {
       const params = new URLSearchParams(window.location.search);
@@ -143,6 +145,7 @@
       if (trial >= NUM_TRIALS) {
         document.body.innerHTML = '<h2>Thank you for your participation!</h2>'
           + '<p>You may now close this window.</p>';
+          + '<p>payload</p>';
         return;
       }
       trial++;
