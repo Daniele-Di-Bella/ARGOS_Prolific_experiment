@@ -94,7 +94,7 @@
     const NUM_TRIALS = 1;  // How many pairwise trials each participant will evaluate
 
     let stimuli = [];
-    fetch('https://daniele-di-bella.github.io/ARGOS_Prolific_experiment/experiment1/stimuli.json')
+    fetch('experiment1/stimuli.json')
     .then(response => {
     if (!response.ok) throw new Error("Could not load stimuli.json");
     return response.json();
