@@ -1,7 +1,7 @@
 import os
 import json
 
-BASE_DIR = './experiment1'
+BASE_DIR = 'experiment1'
 data = []
 id_counter = 1
 

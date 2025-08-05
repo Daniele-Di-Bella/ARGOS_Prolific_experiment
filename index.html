@@ -90,16 +90,23 @@
 
   <script>
     // === Configuration ===
-    const ENDPOINT_URL = 'https://script.google.com/macros/s/AKfycbx3kGyidEOrQOeKJ9rCNuRnI4paNOy7DrhPJj3fXDzuhtsrSHu9tHcLdctXWUd7Vvk/exec';  // TODO: set to your data-collection endpoint
-    const NUM_TRIALS = 2;  // How many pairwise trials each participant will evaluate
+    const ENDPOINT_URL = 'https://script.google.com/macros/s/AKfycbwIkKhsVsR9x7VITyjDmlDpHQ5C8hJwdd1rL1ul7uVPkPFnIyo7rXFete55O1UVkpvX/exec';  // TODO: set to your data-collection endpoint
+    const NUM_TRIALS = 1;  // How many pairwise trials each participant will evaluate
 
     let stimuli = [];
     fetch('experiment1/stimuli.json')
-      .then(response => response.json())
-      .then(data => {
-        stimuli = data;
-        nextTrial();  // start the experiment once data is loaded
-      });
+    .then(response => {
+    if (!response.ok) throw new Error("Could not load stimuli.json");
+    return response.json();
+    })
+    .then(data => {
+    stimuli = data;
+    nextTrial();
+    })
+    .catch(err => {
+    document.body.innerHTML = `<p>Error loading stimuli: ${err.message}</p>`;
+    });
+
 
     function getQueryParam(name) {
       const params = new URLSearchParams(window.location.search);
@@ -143,13 +150,21 @@
 
     function nextTrial() {
       if (trial >= NUM_TRIALS) {
-        document.body.innerHTML = '<h2>Thank you for your participation!</h2>'
-          + '<p>You may now close this window.</p>';
-          + '<p>payload</p>';
+        document.body.innerHTML = `
+          <h2>Thank you for your participation!</h2>
+          <p>You may now close this window.</p>
+          `;
         return;
       }
+
+      const pair = samplePair();
+      if (!pair) {
+      document.body.innerHTML = `<p>Error: Need at least two distinct sources.</p>`;
+      return;
+      }
+
       trial++;
-      const [A, B] = samplePair();
+      const [A, B] = pair;
       currentPair = { A, B };
 
       document.getElementById('textA').innerHTML = renderMarkdown(A.markdown);
@@ -166,7 +181,9 @@
         other_source: (chosen === currentPair.A ? currentPair.B.source : currentPair.A.source),
         timestamp: new Date().toISOString()
       };
+
       try {
+        console.log("Payload to submit:", payload);
         await fetch(ENDPOINT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -212,7 +229,6 @@
     });
 
     let currentPair = null;
-    nextTrial();
   </script>
 
 </body>
