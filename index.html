@@ -184,11 +184,17 @@
 
       try {
         console.log("Payload to submit:", payload);
+
+        const formData = new FormData();
+        for (const [key, value] of Object.entries(payload)) {
+        formData.append(key, value);
+        }
+
         await fetch(ENDPOINT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+        method: 'POST',
+        body: formData
         });
+
       } catch (err) {
         console.error('Failed to submit:', err);
       } finally {
