@@ -255,11 +255,11 @@
           if (trial >= NUM_TRIALS) {
             document.body.innerHTML = `
               <h2>Thank you for your participation!</h2>
-              <p>You will be redirected shortly...</p>
+              <p>You will be shortly redirected to Prolific...</p>
             `;
 
             setTimeout(() => {
-              window.location.href = 'https://www.google.com/'; // The URL the users have to be redirected to after completing the activity
+              window.location.href = 'https://www.prolific.com/'; // The URL the users have to be redirected to after completing the activity
             }, 500); // 0.5-second delay before redirection
 
           } else {
