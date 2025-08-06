@@ -69,6 +69,11 @@
       top: 1em;
       right: 1em;
     }
+
+    .center-text {
+      text-align: center;
+    }
+
   </style>
 </head>
 <body>
@@ -83,14 +88,22 @@
     <div id="textB" class="text-block"></div>
   </div>
 
+  <p class="center-text"><strong>Readability</strong> — Which text offered a smoother reading experience?</p>
   <div class="buttons">
-    <button id="chooseA">I prefer this text</button>
-    <button id="chooseB">I prefer this text</button>
+    <button id="readabilityA">Text A</button>
+    <button id="readabilityB">Text B</button>
   </div>
+
+  <p class="center-text"><strong>Understandability</strong> — Which text was easier to understand?</p>
+  <div class="buttons">
+    <button id="understandabilityA">Text A</button>
+    <button id="understandabilityB">Text B</button>
+  </div>
+
 
   <script>
     // === Configuration ===
-    const ENDPOINT_URL = 'https://script.google.com/macros/s/AKfycbwZnG331jDxFBn9CuqYZXMINJ1rv7PzvrZhkkmiCOVzvoGiM54EQLu47YjLhjJkkki3/exec';  // TODO: set to your data-collection endpoint
+    const ENDPOINT_URL = 'https://script.google.com/macros/s/AKfycbxDCJo4ppQeW6C44eBYJzObuy6bURxC-IjFh5SKGYX66qBkd-Bgf-3kqWGqX5pLlvJ9/exec';  // TODO: set to your data-collection endpoint
     const NUM_TRIALS = 1;  // How many pairwise trials each participant will evaluate
 
     let stimuli = [];
@@ -189,10 +202,11 @@
     return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`;
     }
 
-    async function submitChoice(chosen) {
+    async function submitChoice(chosen, dimension) {
       const payload = {
         participant,
         trial,
+        evaluation_type: dimension,  // either "readability" or "understandability"
         chosen_id: chosen.id,
         chosen_source: chosen.source,
         other_id: (chosen === currentPair.A ? currentPair.B.id : currentPair.A.id),
@@ -205,12 +219,12 @@
 
         const formData = new FormData();
         for (const [key, value] of Object.entries(payload)) {
-        formData.append(key, value);
+          formData.append(key, value);
         }
 
         await fetch(ENDPOINT_URL, {
-        method: 'POST',
-        body: formData
+          method: 'POST',
+          body: formData
         });
 
       } catch (err) {
@@ -220,12 +234,19 @@
       }
     }
 
-    document.getElementById('chooseA').addEventListener('click', () => {
-      submitChoice(currentPair.A);
+    document.getElementById('readabilityA').addEventListener('click', () => {
+      submitChoice(currentPair.A, 'readability');
     });
-    document.getElementById('chooseB').addEventListener('click', () => {
-      submitChoice(currentPair.B);
+    document.getElementById('readabilityB').addEventListener('click', () => {
+      submitChoice(currentPair.B, 'readability');
     });
+    document.getElementById('understandabilityA').addEventListener('click', () => {
+      submitChoice(currentPair.A, 'understandability');
+    });
+    document.getElementById('understandabilityB').addEventListener('click', () => {
+      submitChoice(currentPair.B, 'understandability');
+    });
+
 
     // Theme toggle
       // Select the button only once after DOM is ready
