@@ -111,7 +111,7 @@
 
   <script>
     // === Configuration ===
-    const ENDPOINT_URL = 'https://script.google.com/macros/s/AKfycbxDCJo4ppQeW6C44eBYJzObuy6bURxC-IjFh5SKGYX66qBkd-Bgf-3kqWGqX5pLlvJ9/exec';  // TODO: set to your data-collection endpoint
+    const ENDPOINT_URL = 'https://script.google.com/macros/s/AKfycbxDCJo4ppQeW6C44eBYJzObuy6bURxC-IjFh5SKGYX66qBkd-Bgf-3kqWGqX5pLlvJ9/exec';  // Data-collection endpoint
     const NUM_TRIALS = 1;  // How many pairwise trials each participant will evaluate
 
     let stimuli = [];
@@ -255,12 +255,17 @@
           if (trial >= NUM_TRIALS) {
             document.body.innerHTML = `
               <h2>Thank you for your participation!</h2>
-              <p>You may now close this window.</p>
+              <p>You will be redirected shortly...</p>
             `;
+
+            setTimeout(() => {
+              window.location.href = 'https://www.google.com/'; // The URL the users have to be redirected to after completing the activity
+            }, 500); // 0.5-second delay before redirection
+
           } else {
             nextTrial();
           }
-        }, 250); // Delay to show confirmation
+        }, 250); // Delay to show confirmation before checking completion
       }
     }
 
@@ -290,7 +295,7 @@
       document.body.classList.toggle('dark');
       const isDark = document.body.classList.contains('dark');
       localStorage.setItem('theme', isDark ? 'dark' : 'light');
-      updateThemeIcon(); // 🔁 must be called after toggling the class
+      updateThemeIcon(); // Must be called after toggling the class
     });
 
     // Apply saved theme on load
