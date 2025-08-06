@@ -171,6 +171,24 @@
       document.getElementById('textB').innerHTML = renderMarkdown(B.markdown);
     }
 
+    function getRomeISOTime() {
+      const now = new Date();
+      const romeTime = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Europe/Rome',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      }).formatToParts(now);
+
+    const parts = Object.fromEntries(romeTime.map(({ type, value }) => [type, value]));
+
+    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`;
+    }
+
     async function submitChoice(chosen) {
       const payload = {
         participant,
@@ -179,7 +197,7 @@
         chosen_source: chosen.source,
         other_id: (chosen === currentPair.A ? currentPair.B.id : currentPair.A.id),
         other_source: (chosen === currentPair.A ? currentPair.B.source : currentPair.A.source),
-        timestamp: new Date().toISOString()
+        timestamp: getRomeISOTime()
       };
 
       try {
