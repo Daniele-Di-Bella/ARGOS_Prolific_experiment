@@ -74,6 +74,11 @@
       text-align: center;
     }
 
+    .confirmation {
+      color: lightblue;
+      font-weight: bold;
+    }
+
   </style>
 </head>
 <body>
@@ -88,18 +93,21 @@
     <div id="textB" class="text-block"></div>
   </div>
 
+  <!-- Readability -->
   <p class="center-text"><strong>Readability</strong> — Which text offered a smoother reading experience?</p>
-  <div class="buttons">
-    <button id="readabilityA">Text A</button>
-    <button id="readabilityB">Text B</button>
+  <div class="buttons readability-buttons">
+    <button id="readabilityA">Left</button>
+    <button id="readabilityB">Right</button>
   </div>
+  <p id="readability-confirm" class="center-text confirmation" style="display:none"></p>
 
+  <!-- Understandability -->
   <p class="center-text"><strong>Understandability</strong> — Which text was easier to understand?</p>
-  <div class="buttons">
-    <button id="understandabilityA">Text A</button>
-    <button id="understandabilityB">Text B</button>
+  <div class="buttons understandability-buttons">
+    <button id="understandabilityA">Left</button>
+    <button id="understandabilityB">Right</button>
   </div>
-
+  <p id="understandability-confirm" class="center-text confirmation" style="display:none"></p>
 
   <script>
     // === Configuration ===
@@ -119,7 +127,6 @@
     .catch(err => {
     document.body.innerHTML = `<p>Error loading stimuli: ${err.message}</p>`;
     });
-
 
     function getQueryParam(name) {
       const params = new URLSearchParams(window.location.search);
@@ -202,11 +209,13 @@
     return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`;
     }
 
+    const submittedDimensions = new Set();
+
     async function submitChoice(chosen, dimension) {
       const payload = {
         participant,
         trial,
-        evaluation_type: dimension,  // either "readability" or "understandability"
+        evaluation_type: dimension,
         chosen_id: chosen.id,
         chosen_source: chosen.source,
         other_id: (chosen === currentPair.A ? currentPair.B.id : currentPair.A.id),
@@ -214,9 +223,14 @@
         timestamp: getRomeISOTime()
       };
 
-      try {
-        console.log("Payload to submit:", payload);
+      const buttons = document.querySelectorAll(`.${dimension}-buttons button`);
+      buttons.forEach(btn => btn.disabled = true);
 
+      const confirmMsg = document.getElementById(`${dimension}-confirm`);
+      confirmMsg.textContent = "Your answer has been correctly submitted.";
+      confirmMsg.style.display = 'block';
+
+      try {
         const formData = new FormData();
         for (const [key, value] of Object.entries(payload)) {
           formData.append(key, value);
@@ -229,8 +243,24 @@
 
       } catch (err) {
         console.error('Failed to submit:', err);
-      } finally {
-        nextTrial();
+      }
+
+      // Track answered dimensions
+      submittedDimensions.add(dimension);
+
+      // Only proceed when both answers are given
+      if (submittedDimensions.size === 2) {
+        setTimeout(() => {
+          submittedDimensions.clear();
+          if (trial >= NUM_TRIALS) {
+            document.body.innerHTML = `
+              <h2>Thank you for your participation!</h2>
+              <p>You may now close this window.</p>
+            `;
+          } else {
+            nextTrial();
+          }
+        }, 250); // Delay to show confirmation
       }
     }
 
@@ -246,7 +276,6 @@
     document.getElementById('understandabilityB').addEventListener('click', () => {
       submitChoice(currentPair.B, 'understandability');
     });
-
 
     // Theme toggle
       // Select the button only once after DOM is ready
