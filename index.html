@@ -79,6 +79,15 @@
       font-weight: bold;
     }
 
+    h2 {
+    margin-top: 1.5em;   /* distance above heading */
+    margin-bottom: 0.75em; /* distance below heading */
+    }
+
+    h2:first-of-type {
+    margin-top: 0;
+    }
+
   </style>
 </head>
 <body>
@@ -86,7 +95,7 @@
   <button id="theme-toggle">🌙</button>
 
   <h1>Which text do you prefer?</h1>
-  <p>Please read the two passages below and click on the one you prefer.</p>
+  <p>Please read the two texts below and use the following buttons to communicate your preferences.</p>
 
   <div id="pair-container" class="text-pair">
     <div id="textA" class="text-block"></div>
@@ -162,6 +171,7 @@
       return md
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/^(?:\s{0,3})#+\s*(.*?)\s*$/gm, '<h2>$1</h2>')
         .replace(/\n/g, '<br>');
     }
 
